@@ -1,0 +1,26 @@
+﻿<Window x:Name="exitDialogBox" x:Class="FieldEditor.ExitDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Save Changes" Height="112" Width="502"
+        WindowStyle="ToolWindow" ResizeMode="NoResize" DataContext="{Binding RelativeSource={RelativeSource Self}}">
+	<Grid HorizontalAlignment="Left" Height="91" VerticalAlignment="Top" Width="482" Margin="10,0,0,0">
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="14*" />
+			<ColumnDefinition Width="6*" />
+			<ColumnDefinition Width="221*" />
+		</Grid.ColumnDefinitions>
+		<TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top" Margin="10,10,0,0"
+		           Width="378" Grid.ColumnSpan="3">
+			<Run Text="{Binding Prompt, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+		</TextBlock>
+		<Button x:Name="btnCancel" Content="Cancel" HorizontalAlignment="Left" Margin="353,47,0,0" IsCancel="True"
+		        VerticalAlignment="Top" Width="75" Height="22" Grid.Column="2" Click="ClickedButton" />
+		<Button x:Name="btnCommit" Content="Commit" HorizontalAlignment="Left" Margin="10,47,0,0"
+		        VerticalAlignment="Top" Width="75" Height="22" Grid.ColumnSpan="3" Click="ClickedButton" />
+		<Button x:Name="btnSave" Content="Save" HorizontalAlignment="Left" Margin="50,47,0,0" VerticalAlignment="Top"
+		        Width="75" Height="22" Grid.Column="2" Click="ClickedButton" />
+		<Button x:Name="btnBoth" Content="Both" HorizontalAlignment="Left" Margin="130,47,0,0" VerticalAlignment="Top"
+		        Width="75" Height="22" Grid.Column="2" Click="ClickedButton" />
+		<Button x:Name="btnExit" Content="No" HorizontalAlignment="Left" Margin="273,47,0,0"
+		        VerticalAlignment="Top" Width="75" Height="22" Grid.Column="2" Click="ClickedButton" />
+	</Grid>
+</Window>

@@ -1,0 +1,386 @@
+﻿<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:FieldEditor"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:kit="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls.Input.Toolkit"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ComponentModel="clr-namespace:System.ComponentModel;assembly=WindowsBase" mc:Ignorable="d" x:Name="Main" 
+        x:Class="FieldEditor.MainWindow" Loaded="UI_MainWindow_Loaded"
+        FocusManager.FocusedElement="{x:Reference Name=filterTextBox}"
+        DataContext="{Binding RelativeSource={RelativeSource Self}}" Closing="UI_MainWindow_Closing"
+        Closed="UI_MainWindow_Closed">
+	<Window.Title>
+		<Binding Path="UI_MainWindow_Title" UpdateSourceTrigger="PropertyChanged" Mode="OneWay" />
+	</Window.Title>
+	<Window.Resources>
+		<local:FieldCollection x:Key="Fields" />
+		<local:ObjectToFieldSequenceConverter x:Key="SeqConverter"/>
+		<local:FromDependencyObjectToGroupingConverter x:Key="GroupingConverter"/>
+		<CollectionViewSource x:Key="FieldsViewSource" Source="{StaticResource Fields}" Filter="UI_FieldCollection_Filter" >
+			<CollectionViewSource.GroupDescriptions>
+				<PropertyGroupDescription PropertyName="Group" />
+				<PropertyGroupDescription PropertyName="Subgroup" />
+			</CollectionViewSource.GroupDescriptions>
+			<CollectionViewSource.SortDescriptions>
+				<ComponentModel:SortDescription PropertyName="Group" Direction="Ascending" />
+				<ComponentModel:SortDescription PropertyName="Subgroup" Direction="Ascending"/>
+				<ComponentModel:SortDescription PropertyName="Name" Direction="Ascending"/>
+			</CollectionViewSource.SortDescriptions>
+		</CollectionViewSource>
+		<Style x:Key="dataGridColumnTooltip" TargetType="{x:Type DataGridColumnHeader}">
+			<Style.Triggers>
+				<Trigger Property="IsMouseOver" Value="True">
+					<Setter Property="ToolTip" Value="{Binding Column.(ToolTipService.ToolTip), RelativeSource={RelativeSource Self}}" />
+				</Trigger>
+			</Style.Triggers>
+		</Style>
+		<local:ActionCommand_String x:Key="App_ChangeFolder"/>
+		<local:ActionCommand_String x:Key="App_SaveAs"/>
+		<local:ActionCommand_String x:Key="App_OpenFile"/>
+		
+		<local:ActionCommand x:Key="App_ChangeFolder_Dialog"/>
+		<local:ActionCommand x:Key="App_SaveAs_Dialog"/>
+		<local:ActionCommand x:Key="App_OpenFile_Dialog"/>
+		<local:ActionCommand x:Key="App_Exit_Dialog"/>
+		
+		<local:ActionCommand_Fields x:Key="Fields_Commit"/>
+		<local:ActionCommand_Fields x:Key="Fields_Reload"/>
+		<local:ActionCommand_Fields x:Key="Fields_Delete"/>
+		
+		<local:ActionCommand x:Key="Group_Expand_All"/>
+		<local:ActionCommand x:Key="Group_Collapse_All"/>
+		<local:ActionCommand_String x:Key="Group_Collapse_Others"/>
+		<local:ActionCommand_String x:Key="Group_Rename_Dialog"/>
+		<local:ActionCommand_String x:Key="Group_Delete"/>
+		<local:ActionCommand_GroupingIdentifier x:Key="Subgroup_Rename_Dialog"/>
+		<local:ActionCommand_GroupingIdentifier x:Key="Subgroup_Delete"/>
+		
+		<local:ActionCommand x:Key="Grid_ForceEndEditingMode"/>
+		<local:ActionCommand x:Key="Grid_Refresh"/>
+	</Window.Resources>
+
+	<Window.InputBindings>
+		<KeyBinding Command="{StaticResource App_ChangeFolder_Dialog}" Gesture="Ctrl+H"/>
+		<KeyBinding Command="{StaticResource App_OpenFile_Dialog}" Gesture="Ctrl+B"/>
+		<KeyBinding Command="{StaticResource App_SaveAs}" Gesture="Ctrl+S" CommandParameter="{Binding FieldFilePath}"/>
+		<KeyBinding Command="{StaticResource App_SaveAs_Dialog}" Gesture="Shift+Ctrl+S"/>
+		<KeyBinding Command="{StaticResource Fields_Commit}" Gesture="Ctrl+M" CommandParameter="{Binding ElementName=grid, Path=SelectedItems, Converter={StaticResource SeqConverter}}"/>
+		<KeyBinding x:Name="ReloadSelected" Command="{StaticResource Fields_Reload}" Gesture="Ctrl+L" CommandParameter="{Binding ElementName=grid, Path=SelectedItems, Converter={StaticResource SeqConverter}}"/>
+		<KeyBinding x:Name="ReloadAll" Command="{StaticResource Fields_Reload}" Gesture="Ctrl+Shift+L" CommandParameter="{StaticResource Fields}"/>
+		<KeyBinding x:Name="CommitAll" Command="{StaticResource Fields_Commit}" Gesture="Ctrl+Shift+M" CommandParameter="{StaticResource Fields}"/>
+		<KeyBinding Command="{StaticResource Group_Expand_All}" Gesture="Ctrl+E"/>
+		<KeyBinding Command="{StaticResource Group_Collapse_All}" Gesture="Ctrl+P"/>
+		<KeyBinding Command="{StaticResource Fields_Delete}" Gesture="Ctrl+D" CommandParameter="{Binding ElementName=grid, Path=SelectedItems, Converter={StaticResource SeqConverter}}"/>
+		<KeyBinding Command="{StaticResource App_Exit_Dialog}" Gesture="Ctrl+Q"/>
+	</Window.InputBindings>
+	<Grid>
+		<Menu IsMainMenu="True" Background="White" VerticalAlignment="Top" HorizontalAlignment="Left" Width="145"
+		      Margin="0,3,0,0" >
+			<MenuItem Header="_File">
+				<MenuItem Header="C_hange Folder" InputGestureText="Ctrl+H"
+							 Command="{StaticResource App_ChangeFolder_Dialog}"/>
+				<Separator />
+				<MenuItem Header="_Open..." InputGestureText="Ctrl+B" 
+							 Command="{StaticResource App_OpenFile_Dialog}"/>
+				<MenuItem Header="_Reopen"
+							 Command="{Binding App_OpenFile}"
+							 CommandParameter="{Binding FieldFilePath}"
+							 />
+				<Separator />
+				<MenuItem Header="_Save" InputGestureText="Ctrl+S" 
+							 Command="{StaticResource App_SaveAs}"
+							 CommandParameter="{Binding FieldFilePath}"/>
+				<MenuItem Header="S_ave As..." InputGestureText="Ctrl+Shift+S"
+							 Command="{StaticResource App_SaveAs_Dialog}"/>
+				<Separator />
+				<MenuItem Header="E_xit"  Command="{StaticResource App_Exit_Dialog}" InputGestureText="Ctrl+Q" />
+			</MenuItem>
+			<MenuItem Header="_Actions">
+				<MenuItem Header="_Reload All" InputGestureText="Ctrl+Shift+L"
+							 Command="{StaticResource Fields_Reload}"
+							 CommandParameter="{StaticResource Fields}"
+							 />
+				<MenuItem Header="_Commit all" InputGestureText="Ctrl+Shift+M" 
+							 Command="{StaticResource Fields_Commit}"
+							 CommandParameter="{StaticResource Fields}"/>
+			</MenuItem>
+			<MenuItem Header="_View">
+				<MenuItem Header="_Expand All" Command="{Binding Group_Expand_All}" InputGestureText="Ctrl+E"/>
+				<MenuItem Header="_Collapse All" Command="{Binding Group_Collapse_All}" InputGestureText="Ctrl+P" />
+			</MenuItem>
+		</Menu>
+		<DataGrid x:Name="grid" SelectionMode="Extended" AutoGenerateColumns="False"
+		          ColumnHeaderStyle="{StaticResource dataGridColumnTooltip}" InitializingNewItem="UI_Grid_InitializeNewItem"
+		          Margin="0,26,0,50" IsSynchronizedWithCurrentItem="True" CanUserAddRows="True"
+		          TabIndex="1" CanUserDeleteRows="False">
+			<DataGrid.ItemsSource>
+				<Binding Source="{StaticResource FieldsViewSource}" UpdateSourceTrigger="PropertyChanged"/>
+			</DataGrid.ItemsSource>
+			<DataGrid.Resources>
+				<ContextMenu x:Key="rowContextMenu">
+					<MenuItem Header="Reload Fields" InputGestureText="Ctrl+L" Command="{StaticResource Fields_Reload}">
+						<MenuItem.CommandParameter>
+							<Binding RelativeSource="{RelativeSource AncestorType=DataGrid}" Path="SelectedItems" Converter="{StaticResource SeqConverter}" />
+						</MenuItem.CommandParameter>
+					</MenuItem>
+					<MenuItem Header="_Commit Values"  InputGestureText="Ctrl+M" Command="{StaticResource Fields_Commit}">
+						<MenuItem.CommandParameter>
+							<Binding RelativeSource="{RelativeSource AncestorType=DataGrid}" Path="SelectedItems" Converter="{StaticResource SeqConverter}"/>
+						</MenuItem.CommandParameter>
+					</MenuItem>
+					<Separator />
+					<MenuItem Header="_Delete" InputGestureText="Ctrl+D" Command="{StaticResource Fields_Delete}">
+						<MenuItem.CommandParameter>
+							<Binding RelativeSource="{RelativeSource AncestorType=DataGrid}" Path="SelectedItems" Converter="{StaticResource SeqConverter}"/>
+						</MenuItem.CommandParameter>
+					</MenuItem>
+					<MenuItem Header="Clear Notes" Click="UI_Debug_ClearNotes"/>
+				</ContextMenu>
+				<ContextMenu x:Key="groupHeaderContextMenu">
+					<MenuItem Header="_Expand All" InputGestureText="Ctrl+E" Command="{StaticResource Group_Expand_All}">
+					</MenuItem>
+					<MenuItem Header="_Collapse All" InputGestureText="Ctrl+P" Command="{StaticResource Group_Collapse_All}">
+					</MenuItem>
+					<MenuItem Header="Collapse _Others" Command="{StaticResource Group_Collapse_Others}" CommandParameter="{Binding Name}"/>
+					<Separator />
+					<MenuItem Header="_Rename Group" CommandParameter="{Binding Path=Name}" Command="{StaticResource Group_Rename_Dialog}"/>
+					<Separator />
+					<MenuItem Header="_Delete Group" CommandParameter="{Binding Path=Name}" Command="{StaticResource Group_Delete}"/>
+					<Separator />
+				</ContextMenu>
+				<ContextMenu x:Key="subgroupContextMenu">
+					<MenuItem Header="_Rename Subgroup" Command="{StaticResource Subgroup_Rename_Dialog}">
+						<MenuItem.CommandParameter>
+							<Binding RelativeSource="{RelativeSource FindAncestor, AncestorType=ContextMenu}" Path="PlacementTarget" Converter="{StaticResource GroupingConverter}"/>
+						</MenuItem.CommandParameter>
+					</MenuItem>
+					<Separator />
+					<MenuItem Header="_Delete Subgroup" Command="{StaticResource Subgroup_Delete}">
+						<MenuItem.CommandParameter>
+							<Binding RelativeSource="{RelativeSource FindAncestor, AncestorType=ContextMenu}" Path="PlacementTarget" Converter="{StaticResource GroupingConverter}"/>
+						</MenuItem.CommandParameter>
+					</MenuItem>
+				</ContextMenu>
+				<local:PreferredDisplayValueConverter x:Key="preferredDisplayValueConverter" />
+			</DataGrid.Resources>
+			<DataGrid.RowValidationRules>
+				<local:FieldEntryValidator />
+				<local:NameCollisionValidator />
+			</DataGrid.RowValidationRules>
+			<DataGrid.RowStyle>
+				<Style TargetType="DataGridRow">
+					<Style.Triggers>
+						<Trigger Property="Validation.HasError" Value="True">
+							<Setter Property="ToolTip">
+								<Setter.Value>
+									<Binding RelativeSource="{RelativeSource Self}" Path="(Validation.Errors)[0].ErrorContent" />
+								</Setter.Value>
+							</Setter>
+						</Trigger>
+					</Style.Triggers>
+					<Setter Property="Tag" Value="{Binding RelativeSource={RelativeSource AncestorType=local:MainWindow}}"/>
+					<Setter Property="ContextMenu" Value="{StaticResource rowContextMenu}" />
+				</Style>
+			</DataGrid.RowStyle>
+			<DataGrid.GroupStyle>
+				<GroupStyle>
+					<GroupStyle.HeaderTemplate>
+						<DataTemplate>
+							<StackPanel>
+								<TextBlock Text="{Binding Path=Group}" FontWeight="Bold" Padding="3" />
+							</StackPanel>
+						</DataTemplate>
+					</GroupStyle.HeaderTemplate>
+					<GroupStyle.ContainerStyle>
+						<Style TargetType="{x:Type GroupItem}">
+							<Setter Property="Template">
+								<Setter.Value>
+									<ControlTemplate TargetType="{x:Type GroupItem}">
+										<Expander ContextMenu="{StaticResource ResourceKey=groupHeaderContextMenu }"  Tag="{Binding RelativeSource={RelativeSource AncestorType=local:MainWindow}}" >
+											<Expander.Header>
+
+												<StackPanel Orientation="Horizontal">
+													<TextBlock Text="{Binding Path=Name}" />
+												</StackPanel>
+											</Expander.Header>
+
+											<ItemsPresenter />
+										</Expander>
+									</ControlTemplate>
+								</Setter.Value>
+							</Setter>
+						</Style>
+					</GroupStyle.ContainerStyle>
+				</GroupStyle>
+				<GroupStyle>
+					<GroupStyle.HeaderTemplate>
+						<DataTemplate>
+							<StackPanel Tag="{Binding RelativeSource={RelativeSource AncestorType=local:MainWindow}}" ContextMenu="{StaticResource ResourceKey=subgroupContextMenu}">
+								<TextBlock>
+									<TextBlock.Text>
+										<Binding Path="Name" />
+									</TextBlock.Text>
+								</TextBlock>
+							</StackPanel>
+						</DataTemplate>
+					</GroupStyle.HeaderTemplate>
+				</GroupStyle>
+			</DataGrid.GroupStyle>
+			<DataGrid.Columns>
+
+				<DataGridCheckBoxColumn Header="Saved" IsReadOnly="False" x:Name="gridColIsSaved">
+					<ToolTipService.ToolTip>
+						Says whether the value of this entry is committed to file. 
+						Checking this automatically commits the current value. This box cannot be unchecked.
+					</ToolTipService.ToolTip>
+					<DataGridCheckBoxColumn.Binding>
+						<Binding Path="IsSaved" UpdateSourceTrigger="PropertyChanged" Mode="OneWay" />
+					</DataGridCheckBoxColumn.Binding>
+				</DataGridCheckBoxColumn>
+				<DataGridTemplateColumn Header="Group" x:Name="gridColGroup" SortMemberPath="Group" Width="100">
+					<DataGridTemplateColumn.CellTemplate>
+						<DataTemplate>
+							<TextBlock Text="{Binding Group, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+							           TextTrimming="CharacterEllipsis" />
+						</DataTemplate>
+					</DataGridTemplateColumn.CellTemplate>
+					<DataGridTemplateColumn.CellEditingTemplate>
+						<DataTemplate>
+
+							<kit:AutoCompleteBox Text="{Binding Group, Delay=200, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+							                     IsTextCompletionEnabled="True">
+								<kit:AutoCompleteBox.ItemsSource>
+									<Binding Source="{x:Reference Main}" Path="UI_Binding_AutoComplete_Group"/>
+								</kit:AutoCompleteBox.ItemsSource>
+							</kit:AutoCompleteBox>
+						</DataTemplate>
+					</DataGridTemplateColumn.CellEditingTemplate>
+					<ToolTipService.ToolTip>
+						A user-defined display group.
+					</ToolTipService.ToolTip>
+				</DataGridTemplateColumn>
+				<DataGridTemplateColumn Header="Subgroup" x:Name="gridColSubgroup" SortMemberPath="Subgroup" Width="75">
+					<DataGridTemplateColumn.CellTemplate>
+						<DataTemplate>
+							<TextBlock Text="{Binding Subgroup, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" TextTrimming="CharacterEllipsis" />
+						</DataTemplate>
+					</DataGridTemplateColumn.CellTemplate>
+					<DataGridTemplateColumn.CellEditingTemplate>
+						<DataTemplate>
+
+							<kit:AutoCompleteBox Text="{Binding Subgroup, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+							                     IsTextCompletionEnabled="True" BorderThickness="0">
+								<kit:AutoCompleteBox.ItemsSource>
+									<Binding Source="{x:Reference Main}" Path="UI_Binding_AutoComplete_Subgroup" />
+								</kit:AutoCompleteBox.ItemsSource>
+							</kit:AutoCompleteBox>
+						</DataTemplate>
+					</DataGridTemplateColumn.CellEditingTemplate>
+				</DataGridTemplateColumn>
+				<DataGridTextColumn Header="Name" SortMemberPath="Name" x:Name="gridColName"
+				                    Binding="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+					<ToolTipService.ToolTip>
+						A user-defined name for the field.
+					</ToolTipService.ToolTip>
+				</DataGridTextColumn>
+				<DataGridTemplateColumn Header="File Name" x:Name="gridColPath" SortMemberPath="FileName" Width="150">
+					<ToolTipService.ToolTip>The path to the file.</ToolTipService.ToolTip>
+					<DataGridTemplateColumn.CellTemplate>
+						<DataTemplate>
+							<TextBlock Text="{Binding Path=FileName, Delay=200, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" />
+						</DataTemplate>
+					</DataGridTemplateColumn.CellTemplate>
+					<DataGridTemplateColumn.CellEditingTemplate>
+						<DataTemplate>
+
+							<kit:AutoCompleteBox Text="{Binding Path=FileName, Delay=200, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+								ItemsSource="{Binding Path=AutoCompleteSource_FileName, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:MainWindow}}}" />
+						</DataTemplate>
+					</DataGridTemplateColumn.CellEditingTemplate>
+				</DataGridTemplateColumn>
+				<DataGridTextColumn x:Name="colOffset" Header="Offset"
+					Binding="{Binding Offset, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="70">
+					<ToolTipService.ToolTip>The number of bytes preceding the first byte of the field.</ToolTipService.ToolTip>
+				</DataGridTextColumn>
+				<DataGridComboBoxColumn x:Name="gridColType" Header="Type"
+				                        SelectedItemBinding="{Binding Path=Kind, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+				                        ItemsSource="{Binding Source={x:Static local:MainWindow.UI_Binding_FieldKinds}}">
+					<ToolTipService.ToolTip>
+						The type of value stored in the field.
+					</ToolTipService.ToolTip>
+				</DataGridComboBoxColumn>
+				<DataGridTemplateColumn Header="Value" SortMemberPath="Value">
+					<DataGridTemplateColumn.CellTemplate>
+						<DataTemplate>
+							<TextBlock>
+								<TextBlock.Text>
+									<Binding Path="DisplayValue" UpdateSourceTrigger="PropertyChanged" Mode="OneWay"/>
+								</TextBlock.Text>
+							</TextBlock>
+						</DataTemplate>
+					</DataGridTemplateColumn.CellTemplate>
+					<DataGridTemplateColumn.CellStyle>
+						<Style TargetType="{x:Type DataGridCell}">
+							<Style.Triggers>
+								<DataTrigger Binding="{Binding Path=IsSaved, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" Value="False">
+									<Setter Property="Foreground" Value="Red" />
+									<Setter Property="FontWeight" Value="Bold" />
+								</DataTrigger>
+							</Style.Triggers>
+						</Style>
+					</DataGridTemplateColumn.CellStyle>
+					<DataGridTemplateColumn.CellEditingTemplate>
+						<DataTemplate>
+							<TextBox Text="{Binding Path=Value,UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" />
+						</DataTemplate>
+					</DataGridTemplateColumn.CellEditingTemplate>
+				</DataGridTemplateColumn>
+				<DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="300">
+					<DataGridTextColumn.CellStyle>
+						<Style TargetType="{x:Type FrameworkElement}">
+							<Setter Property="ToolTip" Value="{Binding Notes}" />
+						</Style>
+					</DataGridTextColumn.CellStyle>
+					<DataGridTextColumn.ElementStyle>
+						<Style>
+							<Setter Property="TextBlock.TextWrapping" Value="NoWrap" />
+							<Setter Property="TextBlock.TextTrimming" Value="WordEllipsis" />
+						</Style>
+					</DataGridTextColumn.ElementStyle>
+				</DataGridTextColumn>
+
+
+			</DataGrid.Columns>
+
+		</DataGrid>
+		<Label Content="" HorizontalAlignment="Left" Margin="10,390,0,0" VerticalAlignment="Top" />
+		<TextBox x:Name="filterTextBox" Margin="160,2,10,0" TextWrapping="Wrap" TextChanged="UI_FilterBox_TextChanged"
+		         VerticalAlignment="Top" TabIndex="0" KeyDown="UI_FilterBox_KeyDown">
+			<TextBox.Text>
+				<Binding Path="Filter" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" />
+			</TextBox.Text>
+			<TextBox.Style>
+				<Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+					<Style.Resources>
+						<VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+							<VisualBrush.Visual>
+								<Label Content="Filter... (Ctrl+F to focus)" Foreground="#938E8E" FontSize="13" />
+							</VisualBrush.Visual>
+						</VisualBrush>
+					</Style.Resources>
+					<Style.Triggers>
+						<Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+							<Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+						</Trigger>
+						<Trigger Property="Text" Value="{x:Null}">
+							<Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+						</Trigger>
+						<Trigger Property="IsMouseCaptured" Value="True">
+							<Setter Property="Background" Value="White" />
+						</Trigger>
+					</Style.Triggers>
+				</Style>
+			</TextBox.Style>
+		</TextBox>
+
+	</Grid>
+</Window>

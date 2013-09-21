@@ -1,0 +1,24 @@
+﻿<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+		  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		  xmlns:kit="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls.Input.Toolkit"
+		  x:Class="FieldEditor.InputBoxPrompt" Title="Input value" Height="136" Width="539"
+		  DataContext="{Binding RelativeSource={RelativeSource Self}}" FocusManager.FocusedElement="{Binding  ElementName=boxInput}" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" WindowStyle="ToolWindow" Loaded="Window_Loaded_1" SizeToContent="Width"
+		  
+		  >
+	<Grid>
+		<kit:AutoCompleteBox  Focusable="True" x:Name="boxInput" Margin="10,39,2,0" VerticalAlignment="Top" IsTextCompletionEnabled="True" TabIndex="1" IsTabStop="True" Height="24">
+			<kit:AutoCompleteBox.ItemsSource>
+				<Binding Path="AutoCompletionSource" />
+			</kit:AutoCompleteBox.ItemsSource>
+			<kit:AutoCompleteBox.Text>
+				<Binding Path="UserInput" Mode="OneWayToSource" UpdateSourceTrigger="PropertyChanged" />
+			</kit:AutoCompleteBox.Text>
+		</kit:AutoCompleteBox>
+		<DockPanel Height="24" LastChildFill="False" Margin="10,10,36,0" VerticalAlignment="Top">
+			<TextBlock Text="{Binding Path=PromptString}" />
+		</DockPanel>
+		<Button Content="Cancel" Click="UI_Button_Cancel" TabIndex="3" Height="20" VerticalAlignment="Top" HorizontalAlignment="Right" Width="75" IsCancel="True" Margin="0,75,10,0" UseLayoutRounding="False" HorizontalContentAlignment="Center" />
+		<Button Content="OK" Margin="0,75,90,0" 
+				  Click="UI_Button_OK" TabIndex="2" Height="20" VerticalAlignment="Top" HorizontalAlignment="Right" Width="73" IsDefault="True" />
+	</Grid>
+</Window>
